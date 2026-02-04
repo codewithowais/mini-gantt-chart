@@ -6,6 +6,8 @@ import {
   toDatetimeLocalValue,
 } from '@/lib/utils';
 import type { Task } from '@/lib/types';
+import { TASK_CATEGORIES } from '@/lib/constants';
+import { theme } from '@/lib/theme';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -13,6 +15,8 @@ type TaskFormProps = {
   task: Task | null;
   onSubmit: (task: Omit<Task, 'id' | 'row'>) => void;
   onCancelEdit: () => void;
+  /** When true, hide the form heading (e.g. when used inside a modal). */
+  hideTitle?: boolean;
 };
 
 function defaultStartAt(): string {
@@ -32,8 +36,10 @@ export default function TaskForm({
   task,
   onSubmit,
   onCancelEdit,
+  hideTitle = false,
 }: TaskFormProps) {
   const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
   const [startAt, setStartAt] = useState('');
   const [endAt, setEndAt] = useState('');
   const [status, setStatus] = useState<Task['status']>('todo');
@@ -42,11 +48,13 @@ export default function TaskForm({
   useEffect(() => {
     if (task) {
       setName(task.name);
+      setCategory(task.category ?? TASK_CATEGORIES[0]);
       setStartAt(toDatetimeLocalValue(task.startAt));
       setEndAt(toDatetimeLocalValue(task.endAt));
       setStatus(task.status);
     } else {
       setName('');
+      setCategory(TASK_CATEGORIES[0]);
       setStartAt(toDatetimeLocalValue(defaultStartAt()));
       setEndAt(toDatetimeLocalValue(defaultEndAt()));
       setStatus('todo');
@@ -72,32 +80,31 @@ export default function TaskForm({
     }
     onSubmit({
       name: name.trim(),
+      category: category.trim() || TASK_CATEGORIES[0],
       startAt: startIso,
       endAt: endIso,
       status,
     });
   }
 
-  const inputClass =
-    'transition-fast w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2';
-  const labelClass = 'mb-1 block text-sm font-medium text-gray-700';
-
   return (
     <form
       onSubmit={handleSubmit}
-      className="transition-smooth rounded-lg border border-gray-200 bg-gray-50/80 p-5 shadow-sm hover:shadow-md"
-      aria-labelledby="form-heading"
+      className={hideTitle ? 'p-0' : `transition-smooth p-6 ${theme.formSection}`}
+      aria-labelledby={hideTitle ? undefined : 'form-heading'}
     >
-      <h2
-        id="form-heading"
-        className="mb-4 text-lg font-semibold text-gray-900"
-      >
-        {task ? 'Edit task' : 'New task'}
-      </h2>
+      {!hideTitle && (
+        <h2
+          id="form-heading"
+          className={`mb-4 ${theme.modalTitle}`}
+        >
+          {task ? 'Edit task' : 'New task'}
+        </h2>
+      )}
       {error && (
         <p
           id="form-error"
-          className="transition-fast mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"
+          className={`transition-fast mb-4 ${theme.errorAlert}`}
           role="alert"
         >
           {error}
@@ -105,7 +112,7 @@ export default function TaskForm({
       )}
       <div className="space-y-4">
         <div>
-          <label htmlFor="task-name" className={labelClass}>
+          <label htmlFor="task-name" className={theme.label}>
             Name
           </label>
           <input
@@ -113,13 +120,30 @@ export default function TaskForm({
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className={inputClass}
+            className={theme.input}
             required
             autoComplete="off"
           />
         </div>
         <div>
-          <label htmlFor="task-start" className={labelClass}>
+          <label htmlFor="task-category" className={theme.label}>
+            Category
+          </label>
+          <select
+            id="task-category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className={theme.input}
+          >
+            {TASK_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="task-start" className={theme.label}>
             Start
           </label>
           <input
@@ -127,12 +151,12 @@ export default function TaskForm({
             type="datetime-local"
             value={startAt}
             onChange={(e) => setStartAt(e.target.value)}
-            className={inputClass}
+            className={theme.input}
             required
           />
         </div>
         <div>
-          <label htmlFor="task-end" className={labelClass}>
+          <label htmlFor="task-end" className={theme.label}>
             End
           </label>
           <input
@@ -140,12 +164,12 @@ export default function TaskForm({
             type="datetime-local"
             value={endAt}
             onChange={(e) => setEndAt(e.target.value)}
-            className={inputClass}
+            className={theme.input}
             required
           />
         </div>
         <div>
-          <label htmlFor="task-status" className={labelClass}>
+          <label htmlFor="task-status" className={theme.label}>
             Status
           </label>
           <select
@@ -154,7 +178,7 @@ export default function TaskForm({
             onChange={(e) =>
               setStatus(e.target.value as Task['status'])
             }
-            className={inputClass}
+            className={theme.input}
             aria-describedby={error ? 'form-error' : undefined}
           >
             <option value="todo">Todo</option>
@@ -164,17 +188,14 @@ export default function TaskForm({
         </div>
       </div>
       <div className="mt-6 flex flex-wrap gap-3">
-        <button
-          type="submit"
-          className="transition-smooth rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:scale-[1.02] hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus-visible:ring-2 active:scale-[0.98]"
-        >
+        <button type="submit" className={theme.btnPrimary}>
           {task ? 'Update' : 'Create'}
         </button>
         {task && (
           <button
             type="button"
             onClick={onCancelEdit}
-            className="transition-smooth rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:scale-[1.02] hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus-visible:ring-2 active:scale-[0.98]"
+            className={theme.btnSecondary}
           >
             Cancel
           </button>

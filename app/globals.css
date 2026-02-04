@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* Modern theme: soft gray-white background, dark ink, white surfaces */
+  body {
+    @apply bg-brand-background font-sans text-brand-ink antialiased;
+  }
+  h1, h2, h3 {
+    @apply font-heading;
+  }
+}
+
 @layer utilities {
   .transition-smooth {
     @apply transition-all duration-200 ease-out;

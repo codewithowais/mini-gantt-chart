@@ -1,8 +1,17 @@
-import { STORAGE_KEY } from './constants';
+import { STORAGE_KEY, TASK_CATEGORIES } from './constants';
 import type { Task } from './types';
+
+const DEFAULT_CATEGORY = TASK_CATEGORIES[0];
+
+function ensureCategory(t: { category?: unknown }): string {
+  if (typeof t.category === 'string' && t.category.trim() !== '')
+    return t.category.trim();
+  return DEFAULT_CATEGORY;
+}
 
 /**
  * Parse JSON from localStorage; on null or invalid data return [].
+ * Legacy tasks without category get DEFAULT_CATEGORY.
  */
 export function loadTasks(): Task[] {
   if (typeof window === 'undefined') return [];
@@ -11,18 +20,20 @@ export function loadTasks(): Task[] {
     if (raw === null) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    const tasks = parsed.filter(
-      (t): t is Task =>
-        t &&
-        typeof t === 'object' &&
-        typeof t.id === 'string' &&
-        typeof t.name === 'string' &&
-        typeof t.startAt === 'string' &&
-        typeof t.endAt === 'string' &&
-        (t.status === 'todo' || t.status === 'doing' || t.status === 'done') &&
-        typeof t.row === 'number'
-    );
-    return normalizeRows(tasks);
+    const tasks = parsed
+      .filter(
+        (t): t is Task & { category?: string } =>
+          t &&
+          typeof t === 'object' &&
+          typeof t.id === 'string' &&
+          typeof t.name === 'string' &&
+          typeof t.startAt === 'string' &&
+          typeof t.endAt === 'string' &&
+          (t.status === 'todo' || t.status === 'doing' || t.status === 'done') &&
+          typeof t.row === 'number'
+      )
+      .map((t) => ({ ...t, category: ensureCategory(t) }));
+    return normalizeRows(tasks as Task[]);
   } catch {
     return [];
   }

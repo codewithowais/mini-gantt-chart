@@ -9,6 +9,23 @@ export function startOfTodayLocal(): Date {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
 }
 
+/** Monday 00:00 of the week containing the given date (ISO week). */
+export function startOfWeek(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/** Add days to a Date, return new Date. */
+export function addDays(date: Date, days: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
 /**
  * Clamp a number to [min, max].
  */
@@ -60,4 +77,12 @@ export function durationDays(startAt: string, endAt: string): number {
  */
 export function taskDurationDays(task: Task): number {
   return durationDays(task.startAt, task.endAt);
+}
+
+/** Short date for table display (e.g. "Feb 4"). Use en-US for consistent server/client. */
+export function formatShortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
 }

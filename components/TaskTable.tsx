@@ -2,19 +2,14 @@
 
 import { ROW_HEIGHT } from '@/lib/constants';
 import type { Task } from '@/lib/types';
+import { theme, getCategoryColor } from '@/lib/theme';
+import { formatShortDate, taskDurationDays } from '@/lib/utils';
 
 type TaskTableProps = {
   tasks: Task[];
   onSelectForEdit: (task: Task) => void;
   onDelete: (id: string) => void;
   onReorder: (taskId: string, newIndex: number) => void;
-};
-
-/** Same status colors as GanttGrid bars */
-const STATUS_ROW_ACCENT: Record<Task['status'], string> = {
-  todo: 'bg-amber-200 border-amber-400',
-  doing: 'bg-blue-200 border-blue-400',
-  done: 'bg-emerald-200 border-emerald-400',
 };
 
 export default function TaskTable({
@@ -31,49 +26,64 @@ export default function TaskTable({
   }
 
   return (
-    <div className="transition-smooth w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md">
-      {/* Header row: matches Gantt header height */}
+    <div className={`transition-smooth w-full overflow-x-auto overflow-y-hidden ${theme.cardSm}`}>
+      {/* Header: Drag handle, Name, Category, Start, End, Duration, Status, Actions */}
       <div
-        className="flex items-center border-b border-gray-200 bg-gray-100 px-3 text-xs font-medium text-gray-600"
+        className={`grid grid-cols-[32px_1fr_80px_72px_72px_48px_70px_auto] items-center gap-2 px-3 ${theme.tableHeaderSm}`}
         style={{ height: ROW_HEIGHT }}
       >
-        <span className="w-8 shrink-0" aria-hidden />
-        <span className="min-w-0 flex-1">Task</span>
+        <span className="shrink-0" aria-hidden />
+        <span className="min-w-0 truncate">Name</span>
+        <span className="shrink-0 truncate">Category</span>
+        <span className="shrink-0">Start</span>
+        <span className="shrink-0">End</span>
+        <span className="shrink-0 text-right">Dur</span>
+        <span className="shrink-0">Status</span>
         <span className="shrink-0">Actions</span>
       </div>
-      {/* Rows: same height and order as Gantt */}
       {sorted.map((task) => (
         <div
           key={task.id}
-          className="transition-fast flex items-center border-b border-gray-100 last:border-b-0 hover:bg-gray-50/60"
+          className={`grid grid-cols-[32px_1fr_80px_72px_72px_48px_70px_auto] items-center gap-2 px-3 ${theme.tableRow}`}
           style={{ height: ROW_HEIGHT }}
         >
           <span
-            className="w-8 shrink-0 cursor-grab text-gray-400"
+            className={`w-8 ${theme.dragHandle}`}
             aria-hidden
             title="Drag to reorder"
           >
             ⋮⋮
           </span>
           <div
-            className={`transition-smooth my-1 mr-2 min-h-[20px] min-w-0 flex-1 rounded-md border px-2 py-1 text-sm hover:shadow-sm ${STATUS_ROW_ACCENT[task.status]}`}
+            className={`transition-smooth my-1 min-h-[20px] min-w-0 rounded-md border px-2 py-1 ${theme.statusBadge} ${getCategoryColor(task.category)}`}
           >
-            <span className="truncate font-medium text-gray-900">
-              {task.name}
-            </span>
+            <span className={`truncate ${theme.taskName}`}>{task.name}</span>
           </div>
+          <span className="truncate text-sm text-brand-ink-muted" title={task.category}>
+            {task.category}
+          </span>
+          <span className="truncate text-xs text-brand-ink-muted" title={task.startAt}>
+            {formatShortDate(task.startAt)}
+          </span>
+          <span className="truncate text-xs text-brand-ink-muted" title={task.endAt}>
+            {formatShortDate(task.endAt)}
+          </span>
+          <span className="text-right text-xs text-brand-ink-muted">
+            {taskDurationDays(task)}d
+          </span>
+          <span className="truncate capitalize text-xs text-brand-ink">{task.status}</span>
           <div className="flex shrink-0 gap-1">
             <button
               type="button"
               onClick={() => onSelectForEdit(task)}
-              className="transition-fast rounded px-2 py-1 text-xs font-medium text-blue-600 hover:scale-105 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 active:scale-95"
+              className={theme.btnEdit}
             >
               Edit
             </button>
             <button
               type="button"
               onClick={() => handleDeleteClick(task.id, task.name)}
-              className="transition-fast rounded px-2 py-1 text-xs font-medium text-red-600 hover:scale-105 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 active:scale-95"
+              className={theme.btnDanger}
               aria-label={`Delete ${task.name}`}
             >
               Delete

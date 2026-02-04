@@ -1,64 +1,26 @@
-import { DAYS_RANGE, MS_PER_DAY } from './constants';
+import { DAYS_RANGE, MS_PER_DAY, TASK_CATEGORIES } from './constants';
 import type { Task } from './types';
 import { startOfTodayLocal } from './utils';
 
+/** Realistic task names for current-week dummy data (max 10 tasks). */
 const DUMMY_NAMES = [
-  'Research competitors',
-  'Design wireframes',
-  'Setup CI/CD',
-  'Implement auth',
-  'Write API docs',
-  'Database migration',
-  'Frontend dashboard',
-  'Backend services',
-  'Code review',
-  'Bug fixes',
-  'Performance tuning',
-  'User testing',
-  'Deploy staging',
-  'Security audit',
-  'Documentation',
   'Sprint planning',
+  'Design API spec',
+  'Implement login',
+  'Code review',
+  'Fix critical bug',
+  'Deploy to staging',
+  'Write tests',
+  'Update docs',
+  'Sync with design',
   'Retrospective',
-  'Onboarding',
-  'Refactor module',
-  'Add logging',
-  'Fix accessibility',
-  'Update dependencies',
-  'Integration tests',
-  'E2E tests',
-  'Load testing',
-  'Monitoring setup',
-  'Backup strategy',
-  'Data export',
-  'Email templates',
-  'Notification system',
-  'Search feature',
-  'Filter and sort',
-  'Pagination',
-  'Caching layer',
-  'API versioning',
-  'Error handling',
-  'Validation',
-  'Localization',
-  'Dark mode',
-  'Mobile responsive',
-  'Analytics',
-  'A/B testing',
-  'Feedback form',
-  'Support tickets',
-  'Admin panel',
-  'Reports',
-  'Export PDF',
-  'Import CSV',
-  'Sync with API',
-  'Offline support',
 ];
 
 const STATUSES: Task['status'][] = ['todo', 'doing', 'done'];
 
-const MS_PER_HOUR = 60 * 60 * 1000;
-const MS_PER_MINUTE = 60 * 1000;
+/** Current week = next 7 days from today (inclusive). */
+const CURRENT_WEEK_DAYS = 7;
+const MAX_DUMMY_TASKS = 10;
 
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -68,58 +30,44 @@ function pick<T>(arr: T[]): T {
   return arr[randomInt(0, arr.length - 1)];
 }
 
-/** Random time offset within a day in ms (e.g. 6am–4pm). */
-function randomTimeOfDay(): number {
-  const hours = randomInt(6, 16);
-  const minutes = randomInt(0, 59);
-  return hours * MS_PER_HOUR + minutes * MS_PER_MINUTE;
+function pickCategory(): string {
+  return TASK_CATEGORIES[Math.floor(Math.random() * TASK_CATEGORIES.length)];
 }
 
-/** Max task duration in days so tasks spread across the sprint instead of clustering at the end. */
-const MAX_DURATION_DAYS = 5;
-
 /**
- * Generate ~50 tasks with varied names, dates and times within sprint window (DAYS_RANGE), random status, row 0..n-1.
- * Min duration 1 day, endAt > startAt. Tasks are spread across columns (capped duration) for a balanced look.
+ * Generate up to 10 tasks for the current week only.
+ * Real dates: start/end within [today, today + 6 days]. Realistic names and categories.
  */
 export function generateDummyTasks(): Task[] {
-  const anchor = startOfTodayLocal().getTime();
+  const anchor = startOfTodayLocal();
+  const anchorMs = anchor.getTime();
   const dayMs = MS_PER_DAY;
-  const count = 50;
-  const usedNames = new Set<string>();
   const tasks: Task[] = [];
+  const usedNames = new Set<string>();
+
+  const count = Math.min(MAX_DUMMY_TASKS, DUMMY_NAMES.length);
 
   for (let i = 0; i < count; i++) {
-    let name = pick(DUMMY_NAMES);
-    let suffix = 0;
-    while (usedNames.has(name)) {
-      name = `${pick(DUMMY_NAMES)} ${++suffix}`;
-    }
+    let name = DUMMY_NAMES[i];
+    if (usedNames.has(name)) name = `${DUMMY_NAMES[i]} (${i})`;
     usedNames.add(name);
 
-    const startOffsetDays = randomInt(0, DAYS_RANGE - 2);
-    const maxDuration = Math.min(
-      MAX_DURATION_DAYS,
-      DAYS_RANGE - startOffsetDays - 1
-    );
+    // Start within current week: day 0..(CURRENT_WEEK_DAYS - 2) so we have room for at least 1 day duration
+    const startOffsetDays = randomInt(0, Math.max(0, CURRENT_WEEK_DAYS - 2));
+    const maxDuration = Math.min(3, CURRENT_WEEK_DAYS - startOffsetDays - 1);
     const durationDays = randomInt(1, Math.max(1, maxDuration));
-    const startTimeOfDay = randomTimeOfDay();
-    const endTimeOfDay = randomTimeOfDay();
 
-    const startAt = new Date(
-      anchor + startOffsetDays * dayMs + startTimeOfDay
-    ).toISOString();
-    const endAt = new Date(
-      anchor +
-        (startOffsetDays + durationDays) * dayMs +
-        endTimeOfDay
-    ).toISOString();
+    const startAt = new Date(anchorMs + startOffsetDays * dayMs);
+    startAt.setHours(9, 0, 0, 0);
+    const endAt = new Date(anchorMs + (startOffsetDays + durationDays) * dayMs);
+    endAt.setHours(17, 0, 0, 0);
 
     tasks.push({
       id: crypto.randomUUID(),
       name,
-      startAt,
-      endAt,
+      category: pickCategory(),
+      startAt: startAt.toISOString(),
+      endAt: endAt.toISOString(),
       status: pick(STATUSES),
       row: i,
     });
