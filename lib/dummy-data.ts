@@ -66,7 +66,7 @@ function pick<T>(arr: T[]): T {
 }
 
 /**
- * Generate ~50 tasks with varied names, dates within 60-day window, random status, row 0..n-1.
+ * Generate ~50 tasks with varied names, dates within sprint window (DAYS_RANGE), random status, row 0..n-1.
  * Min duration 1 day, endAt > startAt.
  */
 export function generateDummyTasks(): Task[] {

@@ -78,22 +78,34 @@ export default function TaskForm({
     });
   }
 
+  const inputClass =
+    'transition-fast w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2';
+  const labelClass = 'mb-1 block text-sm font-medium text-gray-700';
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-6 rounded border border-gray-200 bg-gray-50 p-4 shadow-sm"
+      className="transition-smooth rounded-lg border border-gray-200 bg-gray-50/80 p-5 shadow-sm hover:shadow-md"
+      aria-labelledby="form-heading"
     >
-      <h2 className="mb-3 text-lg font-medium">
+      <h2
+        id="form-heading"
+        className="mb-4 text-lg font-semibold text-gray-900"
+      >
         {task ? 'Edit task' : 'New task'}
       </h2>
       {error && (
-        <p className="mb-2 text-sm text-red-600" role="alert">
+        <p
+          id="form-error"
+          className="transition-fast mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"
+          role="alert"
+        >
           {error}
         </p>
       )}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div>
-          <label htmlFor="task-name" className="mb-1 block text-sm font-medium">
+          <label htmlFor="task-name" className={labelClass}>
             Name
           </label>
           <input
@@ -101,12 +113,13 @@ export default function TaskForm({
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            className={inputClass}
             required
+            autoComplete="off"
           />
         </div>
         <div>
-          <label htmlFor="task-start" className="mb-1 block text-sm font-medium">
+          <label htmlFor="task-start" className={labelClass}>
             Start
           </label>
           <input
@@ -114,12 +127,12 @@ export default function TaskForm({
             type="datetime-local"
             value={startAt}
             onChange={(e) => setStartAt(e.target.value)}
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            className={inputClass}
             required
           />
         </div>
         <div>
-          <label htmlFor="task-end" className="mb-1 block text-sm font-medium">
+          <label htmlFor="task-end" className={labelClass}>
             End
           </label>
           <input
@@ -127,12 +140,12 @@ export default function TaskForm({
             type="datetime-local"
             value={endAt}
             onChange={(e) => setEndAt(e.target.value)}
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            className={inputClass}
             required
           />
         </div>
         <div>
-          <label htmlFor="task-status" className="mb-1 block text-sm font-medium">
+          <label htmlFor="task-status" className={labelClass}>
             Status
           </label>
           <select
@@ -141,7 +154,8 @@ export default function TaskForm({
             onChange={(e) =>
               setStatus(e.target.value as Task['status'])
             }
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            className={inputClass}
+            aria-describedby={error ? 'form-error' : undefined}
           >
             <option value="todo">Todo</option>
             <option value="doing">Doing</option>
@@ -149,10 +163,10 @@ export default function TaskForm({
           </select>
         </div>
       </div>
-      <div className="mt-4 flex gap-2">
+      <div className="mt-6 flex flex-wrap gap-3">
         <button
           type="submit"
-          className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="transition-smooth rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:scale-[1.02] hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus-visible:ring-2 active:scale-[0.98]"
         >
           {task ? 'Update' : 'Create'}
         </button>
@@ -160,7 +174,7 @@ export default function TaskForm({
           <button
             type="button"
             onClick={onCancelEdit}
-            className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            className="transition-smooth rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:scale-[1.02] hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus-visible:ring-2 active:scale-[0.98]"
           >
             Cancel
           </button>

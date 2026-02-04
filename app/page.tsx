@@ -1,17 +1,15 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import GanttGrid from '@/components/GanttGrid';
-import TaskForm from '@/components/TaskForm';
-import TaskTable from '@/components/TaskTable';
 import { generateDummyTasks } from '@/lib/dummy-data';
 import { startOfTodayLocal } from '@/lib/utils';
-import { loadTasks, normalizeRows, saveTasks } from '@/lib/storage';
+import { loadTasks, saveTasks } from '@/lib/storage';
 import type { Task } from '@/lib/types';
 
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const initialLoadDone = useRef(false);
 
   useEffect(() => {
@@ -26,85 +24,26 @@ export default function Home() {
     initialLoadDone.current = true;
   }, []);
 
-  useEffect(() => {
-    if (!initialLoadDone.current) return;
-    saveTasks(tasks);
-  }, [tasks]);
-
-  const editingTask = editingId
-    ? tasks.find((t) => t.id === editingId) ?? null
-    : null;
-
-  function handleCreate(payload: Omit<Task, 'id' | 'row'>) {
-    const next: Task = {
-      ...payload,
-      id: crypto.randomUUID(),
-      row: tasks.length,
-    };
-    setTasks((prev) => [...prev, next]);
-  }
-
-  function handleUpdate(payload: Omit<Task, 'id' | 'row'>) {
-    if (!editingId) return;
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === editingId
-          ? { ...t, ...payload }
-          : t
-      )
-    );
-    setEditingId(null);
-  }
-
-  function handleSubmit(payload: Omit<Task, 'id' | 'row'>) {
-    if (editingId) handleUpdate(payload);
-    else handleCreate(payload);
-  }
-
-  function handleDelete(id: string) {
-    setTasks((prev) => normalizeRows(prev.filter((t) => t.id !== id)));
-    if (editingId === id) setEditingId(null);
-  }
-
-  function handleSelectForEdit(task: Task) {
-    setEditingId(task.id);
-  }
-
-  function handleCancelEdit() {
-    setEditingId(null);
-  }
-
-  function handleReorder(taskId: string, newIndex: number) {
-    setTasks((prev) => {
-      const sorted = [...prev].sort((a, b) => a.row - b.row);
-      const fromIndex = sorted.findIndex((t) => t.id === taskId);
-      if (fromIndex === -1 || fromIndex === newIndex) return prev;
-      const [moved] = sorted.splice(fromIndex, 1);
-      sorted.splice(newIndex, 0, moved);
-      return normalizeRows(sorted);
-    });
-  }
-
   return (
-    <main className="min-h-screen p-8">
-      <h1 className="mb-6 text-2xl font-semibold">Mini Gantt</h1>
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+    <main className="min-h-screen p-6 md:p-8">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <TaskForm
-            task={editingTask}
-            onSubmit={handleSubmit}
-            onCancelEdit={handleCancelEdit}
-          />
-          <TaskTable
-            tasks={tasks}
-            onSelectForEdit={handleSelectForEdit}
-            onDelete={handleDelete}
-            onReorder={handleReorder}
-          />
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 md:text-3xl">
+            Mini Gantt
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Day-based timeline. Manage tasks in the Tasks section.
+          </p>
         </div>
-        <div>
-          <GanttGrid tasks={tasks} anchor={startOfTodayLocal()} />
-        </div>
+        <Link
+          href="/tasks"
+          className="transition-smooth rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:scale-[1.02] hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-[0.98]"
+        >
+          Manage tasks
+        </Link>
+      </div>
+      <div className="min-w-0 w-full transition-smooth">
+        <GanttGrid tasks={tasks} anchor={startOfTodayLocal()} />
       </div>
     </main>
   );
