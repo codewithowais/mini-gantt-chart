@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import GanttGrid from '@/components/GanttGrid';
 import TaskForm from '@/components/TaskForm';
 import TaskTable from '@/components/TaskTable';
 import { generateDummyTasks } from '@/lib/dummy-data';
+import { startOfTodayLocal } from '@/lib/utils';
 import { loadTasks, normalizeRows, saveTasks } from '@/lib/storage';
 import type { Task } from '@/lib/types';
 
@@ -100,8 +102,8 @@ export default function Home() {
             onReorder={handleReorder}
           />
         </div>
-        <div className="rounded border border-gray-200 bg-gray-50 p-4">
-          <p className="text-sm text-gray-500">Gantt chart placeholder</p>
+        <div>
+          <GanttGrid tasks={tasks} anchor={startOfTodayLocal()} />
         </div>
       </div>
     </main>
