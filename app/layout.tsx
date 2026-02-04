@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { Outfit, Sora } from 'next/font/google';
 import './globals.css';
 
@@ -31,7 +32,15 @@ export default function RootLayout({
       lang="en"
       className={`${outfit.variable} ${sora.variable} scroll-smooth`}
     >
-      <body className="min-h-screen font-sans antialiased">{children}</body>
+      <body className="min-h-screen font-sans antialiased">
+        {children}
+        <Script
+          src="https://gc.zgo.at/count.js"
+          data-goatcounter="https://owaisahmed.goatcounter.com/count"
+          strategy="afterInteractive"
+          async
+        />
+      </body>
     </html>
   );
 }
