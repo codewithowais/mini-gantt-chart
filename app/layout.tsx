@@ -35,10 +35,10 @@ export default function RootLayout({
       <body className="min-h-screen font-sans antialiased">
         {children}
         <Script
+          id="goatcounter"
+          strategy="afterInteractive"
           src="https://gc.zgo.at/count.js"
           data-goatcounter="https://owaisahmed.goatcounter.com/count"
-          strategy="afterInteractive"
-          async
         />
       </body>
     </html>
