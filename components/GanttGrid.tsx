@@ -116,12 +116,16 @@ const RESIZE_HANDLE_WIDTH = 8;
 /** Responsive row height: 36px on small screens, 40px from sm up. */
 const ROW_HEIGHT_CLASS = 'h-9 sm:h-10';
 
+/** Returns day offset (0..DAYS_RANGE, can be fractional) from left of timeline from a viewport clientX. Scroll-invariant. */
+type GetDayOffsetFromClientX = (clientX: number) => number;
+
 type GanttBarRowProps = {
   task: Task;
   anchor: Date;
   gridCols: { gridTemplateColumns: string };
   onTaskChange?: GanttGridProps['onTaskChange'];
   getDayWidthPx: () => number;
+  getDayOffsetFromClientX: GetDayOffsetFromClientX;
 };
 
 const GanttBarRow = memo(function GanttBarRow({
@@ -130,6 +134,7 @@ const GanttBarRow = memo(function GanttBarRow({
   gridCols,
   onTaskChange,
   getDayWidthPx,
+  getDayOffsetFromClientX,
 }: GanttBarRowProps) {
   const { leftDays, widthDays } = barPosition(task, anchor);
   const anchorMs = anchor.getTime();
@@ -139,10 +144,9 @@ const GanttBarRow = memo(function GanttBarRow({
   const [resizePreviewDays, setResizePreviewDays] = useState<number | null>(null);
 
   const dragRef = useRef<{
-    startX: number;
+    startDayOffset: number;
     startAt: string;
     endAt: string;
-    dayWidthPx: number;
   } | null>(null);
   const resizeRef = useRef<{
     startX: number;
@@ -173,22 +177,21 @@ const GanttBarRow = memo(function GanttBarRow({
     if (e.button !== 0 || !onTaskChange) return;
     const target = e.target as HTMLElement;
     if (target.dataset.resize === 'true') return;
-    const dayWidthPx = getDayWidthPx();
-    if (dayWidthPx <= 0) return;
+    const startDayOffset = getDayOffsetFromClientX(e.clientX);
+    if (Number.isNaN(startDayOffset)) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     dragRef.current = {
-      startX: e.clientX,
+      startDayOffset,
       startAt: task.startAt,
       endAt: task.endAt,
-      dayWidthPx,
     };
     setDragPreviewDays(0);
   }
 
   function handleBarPointerMove(e: React.PointerEvent) {
     if (!dragRef.current) return;
-    const { startX, dayWidthPx } = dragRef.current;
-    dragDeltaRef.current = (e.clientX - startX) / dayWidthPx;
+    const { startDayOffset } = dragRef.current;
+    dragDeltaRef.current = getDayOffsetFromClientX(e.clientX) - startDayOffset;
     if (rafDragIdRef.current === null) {
       rafDragIdRef.current = requestAnimationFrame(() => {
         setDragPreviewDays(dragDeltaRef.current);
@@ -204,9 +207,9 @@ const GanttBarRow = memo(function GanttBarRow({
       rafDragIdRef.current = null;
     }
     if (dragRef.current && onTaskChange) {
-      const { startAt, endAt, dayWidthPx } = dragRef.current;
-      const deltaPx = e.clientX - dragRef.current.startX;
-      const deltaDays = Math.round(deltaPx / dayWidthPx);
+      const { startDayOffset, startAt, endAt } = dragRef.current;
+      const currentDayOffset = getDayOffsetFromClientX(e.clientX);
+      const deltaDays = Math.round(currentDayOffset - startDayOffset);
       if (deltaDays !== 0) {
         const startMs = new Date(startAt).getTime();
         const endMs = new Date(endAt).getTime();
@@ -330,11 +333,25 @@ export default function GanttGrid({
   const tasksInWeek = tasks.filter((t) => taskOverlapsWeek(t, anchorMs));
   const ganttRows = buildGanttRows(tasksInWeek);
   const timelineRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const getDayWidthPx = useCallback(() => {
     const el = timelineRef.current;
     if (!el) return 0;
     return el.offsetWidth / DAYS_RANGE;
+  }, []);
+
+  /** Day offset from left of timeline (0..DAYS_RANGE). Scroll-invariant for correct drag commit. */
+  const getDayOffsetFromClientX = useCallback((clientX: number): number => {
+    const timeline = timelineRef.current;
+    const scrollEl = scrollContainerRef.current;
+    if (!timeline || !scrollEl) return NaN;
+    const rect = timeline.getBoundingClientRect();
+    const scrollLeft = scrollEl.scrollLeft ?? 0;
+    const dayWidthPx = timeline.offsetWidth / DAYS_RANGE;
+    if (dayWidthPx <= 0) return NaN;
+    // Content start in viewport = rect.left - scrollLeft; position in content = clientX - that
+    return (clientX - rect.left + scrollLeft) / dayWidthPx;
   }, []);
 
   const gridCols = useMemo(
@@ -343,7 +360,10 @@ export default function GanttGrid({
   );
 
   return (
-    <div className={`transition-smooth w-full max-w-full overflow-x-auto ${theme.card}`}>
+    <div
+      ref={scrollContainerRef}
+      className={`transition-smooth w-full max-w-full overflow-x-auto ${theme.card}`}
+    >
       <div className="flex min-w-0 w-full">
         {/* Left column: fixed width so timeline bar % stays stable when scrolling/resizing */}
         <div
@@ -444,6 +464,7 @@ export default function GanttGrid({
                   gridCols={gridCols}
                   onTaskChange={onTaskChange}
                   getDayWidthPx={getDayWidthPx}
+                  getDayOffsetFromClientX={getDayOffsetFromClientX}
                 />
               )
             )
