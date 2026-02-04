@@ -163,13 +163,16 @@ const GanttBarRow = memo(function GanttBarRow({
   // Visual position: base + preview, clamped to valid range (like real Gantt)
   const dragDelta = dragPreviewDays ?? 0;
   const resizeDelta = resizePreviewDays ?? 0;
-  const visualLeftDays = clamp(leftDays + dragDelta, 0, DAYS_RANGE - 1);
-  // During drag: clamp width so bar never extends past grid (avoids card width jumping when moving left/right).
-  // During resize: same clamp so the bar doesn't extend past the grid.
+  // During drag: keep bar width constant; only clamp left so bar doesn't extend past grid (no shrinking).
+  // During resize: clamp width so bar doesn't extend past grid.
+  const visualLeftDays =
+    resizePreviewDays !== null
+      ? leftDays // no drag delta when resizing
+      : clamp(leftDays + dragDelta, 0, Math.max(0, DAYS_RANGE - widthDays));
   const visualWidthDays =
     resizePreviewDays !== null
       ? clamp(widthDays + resizeDelta, 1, DAYS_RANGE - visualLeftDays)
-      : Math.min(widthDays, Math.max(1, DAYS_RANGE - visualLeftDays));
+      : widthDays;
   const visualLeftPct = (visualLeftDays / DAYS_RANGE) * 100;
   const visualWidthPct = (visualWidthDays / DAYS_RANGE) * 100;
 
